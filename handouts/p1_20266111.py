@@ -1,5 +1,5 @@
+import sys
 from oracle import Oracle
-oracle = Oracle()
 
 def check_padding(oracle, c0_bytearray, c1_bytearray):
     check_padding.query_count += 1
@@ -45,7 +45,15 @@ def ascii_plaintext(oracle, c0, c1, padding_length):
         plaintext[i] = padding_length
         intermediate[i] = c0[i] ^ padding_length
 
-    priority = ['etaoinsrhldcumfpgwybvkxjqz', '0123456789', '!?_"()/@#$%^&*', 'ETAOINSRHLDCUMFPGWYBVKXJQZ']
+    priority = ['etaoinsrhldcumfpgwybv!?_kxjqz', '0123456789', ' ()"/@#$%^&*', 'ETAOINSRHLDCUMFPGWYBVKXJQZ']
+    all_guesses = []
+
+    for characters in priority:
+        all_guesses.extend(characters.encode("utf-8"))
+
+    for c in range(256):
+        if c not in all_guesses:
+            all_guesses.append(c)
 
     for current_index in range(starting_index -1, -1, -1):
         modified_c0 = bytearray(c0)
@@ -54,48 +62,33 @@ def ascii_plaintext(oracle, c0, c1, padding_length):
         for i in range(current_index + 1, 8):
             modified_c0[i] = current_padding ^ intermediate[i]
 
-        found = False
-        for str in priority:
-            for guess in str.encode("utf-8"):
-                modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
+        for guess in all_guesses:
+            modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
 
-                if check_padding(oracle, modified_c0, c1):
-                    plaintext[current_index] = guess
-                    intermediate[current_index] = guess ^ c0[current_index]
+            if check_padding(oracle, modified_c0, c1):
+                plaintext[current_index] = guess
+                intermediate[current_index] = guess ^ c0[current_index]
 
-                    found = True
-                    break
-            if found == True:
                 break
-
-        # for guess in range(33, 127):
-        #     modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
-
-        #     if check_padding(oracle, modified_c0, c1):
-        #         plaintext[current_index] = guess
-        #         intermediate[current_index] = guess ^ c0[current_index]
-
-        #         break
 
     return plaintext[:-padding_length].decode('ascii')
 
 check_padding.query_count = 0
-data = []
 
-with open('p1_ciphertexts.txt', 'r') as ciphers:
-    for line in ciphers:
-        parts = line.strip().split('\t')
+if __name__ == "__main__":
+    result = ''
 
-        if len(parts) == 2:
-            iv_hex = parts[0]
-            c1_hex = parts[1]
+    if len(sys.argv) != 3:
+        sys.exit(1)
+    
+    iv_hex = sys.argv[1]
+    c1_hex = sys.argv[2]
 
-            iv = bytearray.fromhex(iv_hex[2:])
-            c1 = bytearray.fromhex(c1_hex[2:])
-            data.append((iv, c1))
+    iv = bytearray.fromhex(iv_hex[2:])
+    c1 = bytearray.fromhex(c1_hex[2:])
 
-for c0, c1 in data:
-    length = padding_length(oracle, c0, c1)
-    print(ascii_plaintext(oracle, c0, c1, length))
+    oracle = Oracle()
+    length = padding_length(oracle, iv, c1)
+    result = ascii_plaintext(oracle, iv, c1, length)
 
-print(f"Total Oracle Accesses: {check_padding.query_count}")
+    sys.stdout.write(result)
