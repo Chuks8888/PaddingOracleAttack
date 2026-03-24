@@ -66,7 +66,3 @@ if __name__ == "__main__":
         result.append("0x" + block.hex())
 
     print("\t".join(result), end="")
-
-    
-
-
