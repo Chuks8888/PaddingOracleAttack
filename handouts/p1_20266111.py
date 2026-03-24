@@ -76,8 +76,6 @@ def ascii_plaintext(oracle, c0, c1, padding_length):
 check_padding.query_count = 0
 
 if __name__ == "__main__":
-    result = ''
-
     if len(sys.argv) != 3:
         sys.exit(1)
     
@@ -91,4 +89,4 @@ if __name__ == "__main__":
     length = padding_length(oracle, iv, c1)
     result = ascii_plaintext(oracle, iv, c1, length)
 
-    sys.stdout.write(result)
+    print(result, end="")
