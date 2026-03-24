@@ -45,6 +45,8 @@ def ascii_plaintext(oracle, c0, c1, padding_length):
         plaintext[i] = padding_length
         intermediate[i] = c0[i] ^ padding_length
 
+    priority = ['etaoinsrhldcumfpgwybvkxjqz', '0123456789', '!?_"()/@#$%^&*', 'ETAOINSRHLDCUMFPGWYBVKXJQZ']
+
     for current_index in range(starting_index -1, -1, -1):
         modified_c0 = bytearray(c0)
         current_padding = 8 - current_index
@@ -52,14 +54,28 @@ def ascii_plaintext(oracle, c0, c1, padding_length):
         for i in range(current_index + 1, 8):
             modified_c0[i] = current_padding ^ intermediate[i]
 
-        for guess in range(33, 127):
-            modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
+        found = False
+        for str in priority:
+            for guess in str.encode("utf-8"):
+                modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
 
-            if check_padding(oracle, modified_c0, c1):
-                plaintext[current_index] = guess
-                intermediate[current_index] = guess ^ c0[current_index]
+                if check_padding(oracle, modified_c0, c1):
+                    plaintext[current_index] = guess
+                    intermediate[current_index] = guess ^ c0[current_index]
 
+                    found = True
+                    break
+            if found == True:
                 break
+
+        # for guess in range(33, 127):
+        #     modified_c0[current_index] = current_padding ^ guess ^ c0[current_index]
+
+        #     if check_padding(oracle, modified_c0, c1):
+        #         plaintext[current_index] = guess
+        #         intermediate[current_index] = guess ^ c0[current_index]
+
+        #         break
 
     return plaintext[:-padding_length].decode('ascii')
 
